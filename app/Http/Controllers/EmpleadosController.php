@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Empleados;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use League\CommonMark\Inline\Element\Strong;
 
 class EmpleadosController extends Controller
 {
@@ -48,7 +50,8 @@ class EmpleadosController extends Controller
 
         Empleados::insert($datosEmpleado);
 
-        return response()->json($datosEmpleado);
+        //return response()->json($datosEmpleado);
+        return redirect('empleados')->with('Mensaje','Empleado agregado con éxito');
     }
 
     /**
@@ -87,12 +90,23 @@ class EmpleadosController extends Controller
     {
         //
         $datosEmpleado=request()->except(['_token','_method']);
+
+        if($request->hasFile('Foto')){
+            $empleado = Empleados::findOrFail($id);
+
+            
+            Storage::delete('public/'.$empleado->Foto);
+            
+
+            $datosEmpleado['Foto']=$request->file('Foto')->store('uploads','public');
+        }
+
         Empleados::where('id','=',$id)->update($datosEmpleado);
         
-        $empleado = Empleados::findOrFail($id);
+       //$empleado = Empleados::findOrFail($id);
 
-        return view('empleados.edit',compact('empleado'));
-
+        //return view('empleados.edit',compact('empleado'));
+        return redirect('empleados')->with('Mensaje','Empleado modificado con éxito');
     }
 
     /**
@@ -104,7 +118,13 @@ class EmpleadosController extends Controller
     public function destroy($id)
     {
         //
-        Empleados::destroy($id);
-        return redirect('empleados');
+        $empleado = Empleados::findOrFail($id);
+
+            
+        if(Storage::delete('public/'.$empleado->Foto)){
+            Empleados::destroy($id);
+        }
+        
+        return redirect('empleados')->with('Mensaje','Empleado eliminado con éxito');
     }
 }
